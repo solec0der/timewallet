@@ -48,7 +48,7 @@ struct AdjustView: View {
                 }
 
                 Section("About") {
-                    LabeledContent("Version", value: "1.1")
+                    LabeledContent("Version", value: "1.2")
                     LabeledContent("Plan", value: "0 CHF / week 😌")
                 }
             }

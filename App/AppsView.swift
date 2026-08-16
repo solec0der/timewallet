@@ -10,27 +10,25 @@ struct AppsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 0) {
                     Text("Blocked Apps")
                         .font(.largeTitle.bold())
+                        .padding(.bottom, 20)
 
-                    Text("STATS")
-                        .font(.footnote.weight(.semibold))
-                        .kerning(2)
-                        .foregroundStyle(.secondary)
-
-                    HStack(spacing: 12) {
+                    SectionCaption(text: "Stats")
+                        .padding(.bottom, Theme.headerToCardGap)
+                    HStack(spacing: 10) {
                         StatCard(
                             value: "\(Stats.count(Stats.shieldShownKey))x",
                             label: "Total Prevention",
                             icon: "hand.raised.fill",
-                            colors: [.orange, Color(red: 0.95, green: 0.45, blue: 0.2)]
+                            colors: [.orange, Color(red: 0.9, green: 0.4, blue: 0.2)]
                         )
                         StatCard(
                             value: "\(Stats.count(Stats.sessionsKey))x",
                             label: "Doom Scroll Killer",
                             icon: "bolt.shield.fill",
-                            colors: [.purple, .blue]
+                            colors: [Color(red: 0.5, green: 0.3, blue: 0.9), .blue]
                         )
                         StatCard(
                             value: hoursEarned,
@@ -40,11 +38,9 @@ struct AppsView: View {
                         )
                     }
 
-                    Text("BLOCKED APPS")
-                        .font(.footnote.weight(.semibold))
-                        .kerning(2)
-                        .foregroundStyle(.secondary)
-
+                    SectionCaption(text: "Blocked apps")
+                        .padding(.top, Theme.sectionGap)
+                        .padding(.bottom, Theme.headerToCardGap)
                     selectionCard(
                         selection: doom,
                         emptyText: "No apps blocked yet.",
@@ -53,24 +49,21 @@ struct AppsView: View {
                         action: { showDoomPicker = true }
                     )
 
-                    Text("LEARN APPS · EARN \(SharedConfig.goodAppChunkMinutes) MIN PER \(SharedConfig.goodAppChunkMinutes) MIN")
-                        .font(.footnote.weight(.semibold))
-                        .kerning(1)
-                        .foregroundStyle(.secondary)
-
+                    SectionCaption(text: "Learn apps")
+                        .padding(.top, Theme.sectionGap)
+                        .padding(.bottom, Theme.headerToCardGap)
                     selectionCard(
                         selection: good,
                         emptyText: "No learn apps yet.",
                         buttonTitle: "Choose Learn Apps",
-                        note: "Time spent in these apps earns credit automatically (max \(SharedConfig.maxGoodAppEarnPerDay) min/day).",
+                        note: "Time in these apps earns \(SharedConfig.goodAppChunkMinutes) min per \(SharedConfig.goodAppChunkMinutes) min used, up to \(SharedConfig.maxGoodAppEarnPerDay) min per day.",
                         action: { showGoodPicker = true }
                     )
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, Theme.screenPadding)
                 .padding(.bottom, 24)
             }
-            .background(Color.black.ignoresSafeArea())
-            .preferredColorScheme(.dark)
+            .background(Theme.background.ignoresSafeArea())
             .familyActivityPicker(isPresented: $showDoomPicker, selection: $doom)
             .familyActivityPicker(isPresented: $showGoodPicker, selection: $good)
             .onChange(of: showDoomPicker) { presented in
@@ -100,54 +93,48 @@ struct AppsView: View {
         note: String,
         action: @escaping () -> Void
     ) -> some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             Group {
                 if selection.applicationTokens.isEmpty && selection.categoryTokens.isEmpty {
                     Text(emptyText)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 14) {
+                        HStack(spacing: 16) {
                             ForEach(Array(selection.applicationTokens), id: \.self) { token in
                                 Label(token)
                                     .labelStyle(.iconOnly)
-                                    .scaleEffect(1.6)
-                                    .frame(width: 44, height: 44)
+                                    .scaleEffect(1.4)
+                                    .frame(width: 36, height: 36)
                             }
                             ForEach(Array(selection.categoryTokens), id: \.self) { token in
                                 Label(token)
                                     .labelStyle(.iconOnly)
-                                    .scaleEffect(1.6)
-                                    .frame(width: 44, height: 44)
+                                    .scaleEffect(1.4)
+                                    .frame(width: 36, height: 36)
                             }
                         }
-                        .padding(.horizontal, 6)
+                        .padding(.horizontal, 8)
                     }
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 18)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Color(white: 0.11)))
+            .padding(.vertical, 16)
+            .background(RoundedRectangle(cornerRadius: Theme.tileRadius).fill(Theme.tile))
 
             Button(action: action) {
                 Label(buttonTitle, systemImage: "plus")
-                    .fontWeight(.semibold)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.blue.opacity(0.2)))
-                    .foregroundStyle(.blue)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(SubtleButtonStyle())
 
             Text(note)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Color(white: 0.11)))
         }
-        .padding(14)
-        .background(RoundedRectangle(cornerRadius: 22).fill(Color(white: 0.07)))
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: Theme.cardRadius).fill(Theme.card))
     }
 }
 
@@ -158,23 +145,24 @@ struct StatCard: View {
     let colors: [Color]
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.title3)
-                .frame(width: 46, height: 46)
-                .background(Circle().fill(.white.opacity(0.25)))
+                .font(.callout)
+                .frame(width: 38, height: 38)
+                .background(Circle().fill(.white.opacity(0.22)))
             Text(value)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .font(.system(.title2, design: .rounded).weight(.bold))
             Text(label)
-                .font(.footnote.weight(.medium))
+                .font(.caption.weight(.medium))
                 .multilineTextAlignment(.center)
+                .lineLimit(2, reservesSpace: true)
         }
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 18)
-        .padding(.horizontal, 6)
+        .padding(.vertical, 14)
+        .padding(.horizontal, 4)
         .background(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: 18)
                 .fill(LinearGradient(colors: colors, startPoint: .top, endPoint: .bottomTrailing))
         )
     }

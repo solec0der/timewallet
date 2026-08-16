@@ -74,27 +74,39 @@ struct FocusView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    header
+                VStack(alignment: .leading, spacing: 0) {
+                    pillsRow
+                        .padding(.bottom, 16)
                     WalletCard(balanceMinutes: balance)
-                    actionButtons
+                        .padding(.bottom, 14)
+                    redeemButton
                     if let start = focusStart {
                         runningSession(start: start)
+                            .padding(.top, Theme.sectionGap)
                     }
-                    sectionTitle("Daily Goals", icon: "flag")
+
+                    SectionHeader(title: "Daily Goals", icon: "flag")
+                        .padding(.top, Theme.sectionGap)
+                        .padding(.bottom, Theme.headerToCardGap)
                     goalsCard
-                    sectionTitle("Activities", icon: "clock")
+
+                    SectionHeader(title: "Activities", icon: "clock")
+                        .padding(.top, Theme.sectionGap)
+                        .padding(.bottom, Theme.headerToCardGap)
                     activitiesCard
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, Theme.screenPadding)
                 .padding(.bottom, 24)
             }
-            .background(Color.black.ignoresSafeArea())
-            .preferredColorScheme(.dark)
+            .background(Theme.background.ignoresSafeArea())
             .onAppear { reload() }
             .onReceive(tick) { now = $0 }
             .refreshable { reload() }
-            .sheet(isPresented: $showRedeem) { redeemSheet }
+            .sheet(isPresented: $showRedeem) {
+                RedeemSheet(balance: balance) { minutes in
+                    spend(minutes)
+                }
+            }
             .alert("Time Wallet", isPresented: $showMessage) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -103,98 +115,89 @@ struct FocusView: View {
         }
     }
 
-    // MARK: - Header
+    // MARK: - Top pills
 
-    private var header: some View {
-        HStack {
-            Text("Focus")
-                .font(.largeTitle.bold())
-            Spacer()
-            HStack(spacing: 6) {
-                Image(systemName: "flame.fill")
-                    .foregroundStyle(streak > 0 ? .orange : .secondary)
-                Text("\(streak)")
-                    .fontWeight(.semibold)
+    private var pillsRow: some View {
+        HStack(spacing: 8) {
+            pill {
+                Label("\(Int(Stats.totalEarned)) min", systemImage: "trophy")
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(Capsule().fill(Color(white: 0.12)))
+            Spacer()
+            pill {
+                HStack(spacing: 5) {
+                    Image(systemName: "flame.fill")
+                        .foregroundStyle(streak > 0 ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
+                    Text("\(streak)")
+                }
+            }
         }
     }
 
-    // MARK: - Action buttons
+    private func pill<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .font(.footnote.weight(.medium))
+            .padding(.horizontal, 12)
+            .frame(height: 32)
+            .background(Capsule().fill(Theme.card))
+    }
 
-    private var actionButtons: some View {
-        HStack(spacing: 12) {
-            Button {
-                showRedeem = true
-            } label: {
-                HStack {
-                    Image(systemName: "square.and.arrow.up")
-                        .foregroundStyle(.orange)
-                    Text("Redeem")
-                        .fontWeight(.semibold)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Color(white: 0.1)))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.blue.opacity(0.6)))
-            }
-            .buttonStyle(.plain)
+    // MARK: - Redeem
+
+    private var redeemButton: some View {
+        Button {
+            showRedeem = true
+        } label: {
+            Label("Redeem", systemImage: "arrow.up.circle.fill")
         }
+        .buttonStyle(SubtleButtonStyle())
     }
 
     // MARK: - Running focus session
 
     private func runningSession(start: Date) -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             Text(FocusTimer.goalName)
-                .font(.headline)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
             Text(elapsedString(since: start))
-                .font(.system(size: 40, weight: .bold, design: .monospaced))
-            Button {
+                .font(.system(size: 36, weight: .semibold, design: .monospaced))
+                .monospacedDigit()
+            Button("Stop & collect") {
                 stopFocus()
-            } label: {
-                Text("Stop & collect")
-                    .fontWeight(.semibold)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.blue))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(SubtleButtonStyle())
         }
         .frame(maxWidth: .infinity)
-        .padding(20)
-        .background(RoundedRectangle(cornerRadius: 20).fill(Color(white: 0.09)))
+        .padding(18)
+        .background(RoundedRectangle(cornerRadius: Theme.cardRadius).fill(Theme.card))
     }
 
     // MARK: - Daily goals
 
     private var goalsCard: some View {
-        VStack(spacing: 0) {
+        CardGroup {
             ForEach(goals) { goal in
                 goalRow(goal)
-                Divider().overlay(Color(white: 0.2))
+                InsetDivider()
             }
             stepsRow
-            Divider().overlay(Color(white: 0.2))
+            InsetDivider()
             learnAppsRow
             ForEach(chores) { chore in
-                Divider().overlay(Color(white: 0.2))
+                InsetDivider()
                 choreRow(chore)
             }
         }
-        .padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 20).fill(Color(white: 0.08)))
     }
 
     private func goalRow(_ goal: FocusGoal) -> some View {
-        HStack(spacing: 14) {
-            emojiTile(goal.emoji)
+        HStack(spacing: 12) {
+            EmojiTile(emoji: goal.emoji)
             VStack(alignment: .leading, spacing: 2) {
-                Text(goal.name).font(.headline)
+                Text(goal.name)
+                    .font(.body.weight(.medium))
                 Text("\(goal.targetMinutes) min daily goal")
-                    .font(.subheadline)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -202,87 +205,82 @@ struct FocusView: View {
                 startFocus(named: goal.name)
             } label: {
                 Image(systemName: "play.fill")
-                    .padding(12)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.blue.opacity(0.25)))
+                    .font(.subheadline)
                     .foregroundStyle(.blue)
+                    .frame(width: 38, height: 38)
+                    .background(RoundedRectangle(cornerRadius: 11).fill(Color.blue.opacity(0.16)))
             }
             .buttonStyle(.plain)
             .disabled(focusStart != nil)
+            .opacity(focusStart != nil ? 0.4 : 1)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, Theme.rowPaddingH)
+        .padding(.vertical, Theme.rowPaddingV)
     }
 
     private var stepsRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 14) {
-                emojiTile("👟")
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                EmojiTile(emoji: "👟")
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Steps").font(.headline)
-                    Text("\(Int(health.todaySteps).formatted()) / \(Int(health.stepsGoal).formatted()) Steps")
-                        .font(.subheadline)
+                    Text("Steps")
+                        .font(.body.weight(.medium))
+                    Text("\(Int(health.todaySteps).formatted()) / \(Int(health.stepsGoal).formatted()) steps")
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Text("\(Int(min(100, health.todaySteps / health.stepsGoal * 100)))%")
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
             ProgressView(value: min(1, health.todaySteps / health.stepsGoal))
                 .tint(.blue)
-            HStack {
-                Label("\(Int(health.creditedSteps).formatted()) collected", systemImage: "checkmark.circle.fill")
-                    .font(.footnote)
-                    .foregroundStyle(.green)
-                Spacer()
-            }
+            Label("\(Int(health.creditedSteps).formatted()) collected", systemImage: "checkmark.circle.fill")
+                .font(.footnote)
+                .foregroundStyle(.green)
             if health.pendingSteps >= 1 {
                 Button {
                     Task { await health.refresh(); health.collectSteps(); reload() }
                 } label: {
                     Label("Collect \(Int(health.pendingSteps).formatted()) steps", systemImage: "square.and.arrow.down")
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.blue.opacity(0.2)))
-                        .foregroundStyle(.blue)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(SubtleButtonStyle())
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, Theme.rowPaddingH)
+        .padding(.vertical, Theme.rowPaddingV)
     }
 
     private var learnAppsRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 14) {
-                emojiTile("📚")
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                EmojiTile(emoji: "📚")
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Learn Apps").font(.headline)
-                    Text("\(Stats.goodToday(day: DayKey.today())) / \(SharedConfig.maxGoodAppEarnPerDay) min")
-                        .font(.subheadline)
+                    Text("Learn Apps")
+                        .font(.body.weight(.medium))
+                    Text("\(Stats.goodToday(day: DayKey.today())) / \(SharedConfig.maxGoodAppEarnPerDay) min · auto-credits")
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
             }
             ProgressView(value: min(1, Double(Stats.goodToday(day: DayKey.today())) / Double(SharedConfig.maxGoodAppEarnPerDay)))
                 .tint(.blue)
-            Text("Time in your chosen learn apps auto-credits every \(SharedConfig.goodAppChunkMinutes) min.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, Theme.rowPaddingH)
+        .padding(.vertical, Theme.rowPaddingV)
     }
 
     private func choreRow(_ chore: Chore) -> some View {
         let done = chore.lastDoneDay == DayKey.today()
-        return HStack(spacing: 14) {
-            emojiTile("✅")
+        return HStack(spacing: 12) {
+            EmojiTile(emoji: "🧹")
             VStack(alignment: .leading, spacing: 2) {
-                Text(chore.name).font(.headline)
-                Text("+\(chore.bounty) min bounty · once per day")
-                    .font(.subheadline)
+                Text(chore.name)
+                    .font(.body.weight(.medium))
+                Text("+\(chore.bounty) min · once per day")
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -290,50 +288,52 @@ struct FocusView: View {
                 complete(chore)
             } label: {
                 Image(systemName: done ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundStyle(done ? .green : .secondary)
+                    .font(.title3)
+                    .foregroundStyle(done ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .disabled(done)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, Theme.rowPaddingH)
+        .padding(.vertical, Theme.rowPaddingV)
     }
 
     // MARK: - Activities
 
     private var activitiesCard: some View {
-        VStack(spacing: 0) {
+        CardGroup {
             if ledger.isEmpty {
                 Text("Nothing yet. Go earn some time.")
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .padding(20)
+                    .padding(18)
             }
             ForEach(Array(ledger.prefix(25).enumerated()), id: \.element.id) { index, entry in
-                if index > 0 { Divider().overlay(Color(white: 0.2)) }
+                if index > 0 { InsetDivider() }
                 activityRow(entry)
             }
         }
-        .background(RoundedRectangle(cornerRadius: 20).fill(Color(white: 0.08)))
     }
 
     private func activityRow(_ entry: LedgerEntry) -> some View {
-        HStack(spacing: 14) {
-            emojiTile(icon(for: entry))
+        HStack(spacing: 12) {
+            EmojiTile(emoji: icon(for: entry))
             VStack(alignment: .leading, spacing: 2) {
-                Text(title(for: entry)).font(.headline)
+                Text(title(for: entry))
+                    .font(.body.weight(.medium))
                 Text(entry.date, format: .relative(presentation: .named))
-                    .font(.subheadline)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
             Spacer()
             Text(amountString(entry.minutes))
-                .font(.headline)
+                .font(.subheadline.weight(.semibold))
                 .monospacedDigit()
                 .foregroundStyle(entry.minutes >= 0 ? .green : .red)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, Theme.rowPaddingH)
+        .padding(.vertical, Theme.rowPaddingV)
     }
 
     private func icon(for entry: LedgerEntry) -> String {
@@ -344,9 +344,8 @@ struct FocusView: View {
         if r.contains("meditation") { return "🧘" }
         if r.contains("reading") { return "🎯" }
         if r.contains("learn") { return "📚" }
-        if r.contains("task") { return "✅" }
-        return "⏳"
-    }
+        if r.contains("task") { return "🧹" }
+        return "⏳" }
 
     private func title(for entry: LedgerEntry) -> String {
         entry.minutes < 0 ? "Social Media Session" : entry.reason
@@ -359,57 +358,7 @@ struct FocusView: View {
         return (minutes > 0 ? "+" : "") + value + " min"
     }
 
-    // MARK: - Redeem sheet
-
-    private var redeemSheet: some View {
-        NavigationStack {
-            List {
-                Section("Unlock scroll time · rate \(SharedConfig.spendRatio):1") {
-                    ForEach([5, 10, 15, 30], id: \.self) { minutes in
-                        Button {
-                            showRedeem = false
-                            spend(minutes)
-                        } label: {
-                            HStack {
-                                Text("Unlock \(minutes) min")
-                                Spacer()
-                                Text("−\(minutes * SharedConfig.spendRatio) min")
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .disabled(balance < Double(minutes * SharedConfig.spendRatio))
-                    }
-                }
-                Section {
-                    Text("Unlocked minutes are metered by actual usage and stay valid until midnight.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .navigationTitle("Redeem")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .presentationDetents([.medium])
-        .preferredColorScheme(.dark)
-    }
-
-    // MARK: - Helpers
-
-    private func sectionTitle(_ title: String, icon: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .padding(8)
-                .background(RoundedRectangle(cornerRadius: 10).fill(Color(white: 0.12)))
-            Text(title).font(.title2.bold())
-        }
-    }
-
-    private func emojiTile(_ emoji: String) -> some View {
-        Text(emoji)
-            .font(.title2)
-            .frame(width: 48, height: 48)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color(white: 0.14)))
-    }
+    // MARK: - Actions
 
     private func reload() {
         balance = Wallet.balanceMinutes
@@ -423,7 +372,6 @@ struct FocusView: View {
         let earnDays = Set(ledger.filter { $0.minutes > 0 }.map { DayKey.today($0.date) })
         var streak = 0
         var day = Date()
-        // Today counts if something was earned; otherwise start checking yesterday.
         if !earnDays.contains(DayKey.today(day)) {
             day = Calendar.current.date(byAdding: .day, value: -1, to: day) ?? day
         }
@@ -477,6 +425,92 @@ struct FocusView: View {
     }
 }
 
+// MARK: - Redeem sheet
+
+struct RedeemSheet: View {
+    let balance: Double
+    let onRedeem: (Int) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var selected: Int?
+
+    private let presets = [5, 10, 15, 30]
+    private var ratio: Int { SharedConfig.spendRatio }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Redeem")
+                    .font(.title2.weight(.bold))
+                Text("Balance: \(Int(balance)) min · rate \(ratio) → 1")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                ForEach(presets, id: \.self) { minutes in
+                    presetCard(minutes)
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            Button {
+                if let selected {
+                    dismiss()
+                    onRedeem(selected)
+                }
+            } label: {
+                Text(selected.map { "Unlock \($0) min for \($0 * ratio) min" } ?? "Choose an amount")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 50)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(selected == nil)
+
+            Text("Unlocked minutes are metered by actual usage and stay valid until midnight.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(20)
+        .presentationDetents([.height(460)])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func presetCard(_ minutes: Int) -> some View {
+        let cost = minutes * ratio
+        let affordable = balance >= Double(cost)
+        let isSelected = selected == minutes
+        return Button {
+            selected = minutes
+        } label: {
+            VStack(spacing: 4) {
+                Text("\(minutes)")
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                Text("min unlocked")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("−\(cost) min")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(affordable ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: Theme.tileRadius)
+                    .fill(isSelected ? Color.blue.opacity(0.2) : Theme.tile)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.tileRadius)
+                    .stroke(isSelected ? Color.blue : .clear, lineWidth: 1.5)
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(!affordable)
+        .opacity(affordable ? 1 : 0.4)
+    }
+}
+
 // MARK: - Wallet card
 
 struct WalletCard: View {
@@ -484,63 +518,72 @@ struct WalletCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Time Wallet")
-                .font(.system(size: 26, weight: .semibold, design: .serif))
-                .italic()
-                .foregroundStyle(.white.opacity(0.95))
-            Spacer()
-            HStack(alignment: .bottom) {
-                chip
+            HStack(alignment: .top) {
+                Text("Time Wallet")
+                    .font(.system(size: 21, weight: .semibold, design: .serif))
+                    .italic()
+                    .foregroundStyle(.white.opacity(0.95))
                 Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .trailing, spacing: 1) {
                     Text("BALANCE")
-                        .font(.caption2)
-                        .kerning(2)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .font(.system(size: 10, weight: .semibold))
+                        .kerning(1.5)
+                        .foregroundStyle(.white.opacity(0.65))
                     Text("\(Int(balanceMinutes))min")
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .font(.system(size: 30, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                 }
             }
             Spacer()
-            Text("* * * *   3846")
-                .font(.system(.title3, design: .monospaced).weight(.semibold))
-                .foregroundStyle(.white.opacity(0.9))
+            chip
             Spacer()
-            VStack(alignment: .leading, spacing: 2) {
-                Text("CARD HOLDER")
-                    .font(.caption2)
-                    .kerning(2)
-                    .foregroundStyle(.white.opacity(0.6))
-                Text("YANNICK")
-                    .font(.callout.weight(.semibold))
-                    .kerning(2)
-                    .foregroundStyle(.white.opacity(0.95))
+            HStack(alignment: .bottom) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("✱ ✱ ✱ ✱  3846")
+                        .font(.system(.subheadline, design: .monospaced).weight(.medium))
+                        .kerning(2)
+                        .foregroundStyle(.white.opacity(0.85))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("CARD HOLDER")
+                            .font(.system(size: 9, weight: .semibold))
+                            .kerning(1.5)
+                            .foregroundStyle(.white.opacity(0.55))
+                        Text("YANNICK")
+                            .font(.footnote.weight(.semibold))
+                            .kerning(2)
+                            .foregroundStyle(.white.opacity(0.95))
+                    }
+                }
+                Spacer()
             }
         }
-        .padding(24)
+        .padding(20)
         .frame(maxWidth: .infinity)
-        .frame(height: 250)
+        .frame(height: 205)
         .background(
-            RoundedRectangle(cornerRadius: 24)
+            RoundedRectangle(cornerRadius: Theme.cardRadius)
                 .fill(
                     LinearGradient(
-                        colors: [Color(white: 0.78), Color(white: 0.55), Color(white: 0.38)],
+                        colors: [Color(white: 0.75), Color(white: 0.52), Color(white: 0.36)],
                         startPoint: .topLeading, endPoint: .bottomTrailing
                     )
                 )
         )
-        .shadow(color: .white.opacity(0.08), radius: 20)
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.cardRadius)
+                .stroke(.white.opacity(0.18), lineWidth: 0.8)
+        )
+        .shadow(color: .black.opacity(0.5), radius: 16, y: 8)
     }
 
     private var chip: some View {
-        RoundedRectangle(cornerRadius: 6)
+        RoundedRectangle(cornerRadius: 5)
             .fill(
-                LinearGradient(colors: [Color(red: 0.9, green: 0.75, blue: 0.35),
-                                        Color(red: 0.72, green: 0.55, blue: 0.2)],
+                LinearGradient(colors: [Color(red: 0.88, green: 0.74, blue: 0.38),
+                                        Color(red: 0.7, green: 0.54, blue: 0.22)],
                                startPoint: .top, endPoint: .bottom)
             )
-            .frame(width: 52, height: 40)
+            .frame(width: 44, height: 33)
             .overlay(
                 Grid(horizontalSpacing: 0, verticalSpacing: 0) {
                     GridRow { chipCell; chipCell; chipCell }
@@ -551,7 +594,7 @@ struct WalletCard: View {
 
     private var chipCell: some View {
         Rectangle()
-            .stroke(Color.black.opacity(0.25), lineWidth: 0.8)
-            .frame(width: 17, height: 20)
+            .stroke(Color.black.opacity(0.22), lineWidth: 0.7)
+            .frame(width: 14.5, height: 16.5)
     }
 }
