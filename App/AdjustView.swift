@@ -3,6 +3,7 @@ import FamilyControls
 
 struct AdjustView: View {
     @State private var ratio = SharedConfig.spendRatio
+    @State private var cardHolder = SharedConfig.cardHolder
     @State private var troubleshootDone = false
 
     var body: some View {
@@ -18,6 +19,16 @@ struct AdjustView: View {
                     }
                     .onChange(of: ratio) { newValue in
                         SharedConfig.spendRatio = newValue
+                    }
+                    HStack {
+                        Label("Card holder", systemImage: "person")
+                        Spacer()
+                        TextField("Your name", text: $cardHolder)
+                            .multilineTextAlignment(.trailing)
+                            .autocorrectionDisabled()
+                            .onChange(of: cardHolder) { newValue in
+                                SharedConfig.cardHolder = newValue
+                            }
                     }
                 }
 
@@ -48,7 +59,7 @@ struct AdjustView: View {
                 }
 
                 Section("About") {
-                    LabeledContent("Version", value: "1.2")
+                    LabeledContent("Version", value: "1.3")
                     LabeledContent("Plan", value: "0 CHF / week 😌")
                 }
             }

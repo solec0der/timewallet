@@ -77,7 +77,7 @@ struct FocusView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     pillsRow
                         .padding(.bottom, 16)
-                    WalletCard(balanceMinutes: balance)
+                    WalletCard(balanceMinutes: balance, holder: SharedConfig.cardHolder)
                         .padding(.bottom, 14)
                     redeemButton
                     if let start = focusStart {
@@ -515,6 +515,7 @@ struct RedeemSheet: View {
 
 struct WalletCard: View {
     let balanceMinutes: Double
+    let holder: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -543,15 +544,17 @@ struct WalletCard: View {
                         .font(.system(.subheadline, design: .monospaced).weight(.medium))
                         .kerning(2)
                         .foregroundStyle(.white.opacity(0.85))
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("CARD HOLDER")
-                            .font(.system(size: 9, weight: .semibold))
-                            .kerning(1.5)
-                            .foregroundStyle(.white.opacity(0.55))
-                        Text("YANNICK")
-                            .font(.footnote.weight(.semibold))
-                            .kerning(2)
-                            .foregroundStyle(.white.opacity(0.95))
+                    if !holder.isEmpty {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("CARD HOLDER")
+                                .font(.system(size: 9, weight: .semibold))
+                                .kerning(1.5)
+                                .foregroundStyle(.white.opacity(0.55))
+                            Text(holder.uppercased())
+                                .font(.footnote.weight(.semibold))
+                                .kerning(2)
+                                .foregroundStyle(.white.opacity(0.95))
+                        }
                     }
                 }
                 Spacer()

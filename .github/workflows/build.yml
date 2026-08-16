@@ -50,13 +50,22 @@ jobs:
           printf '%s' "$ASC_KEY_P8" > asckey.p8
           mkdir -p ~/.appstoreconnect/private_keys
           cp asckey.p8 ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
-      - name: Register device
+      - name: Register devices
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          DEVICE_UDID: ${{ secrets.DEVICE_UDID }}
+          DEVICE_UDIDS: ${{ secrets.DEVICE_UDIDS }}
         run: |
-          printf 'Device ID\tDevice Name\n%s\tYannick-iPhone\n' "$DEVICE_UDID" > devices.txt
+          {
+            printf 'Device ID\tDevice Name\n'
+            i=1
+            echo "$DEVICE_UDIDS" | tr ',' '\n' | while read -r udid; do
+              udid="$(echo "$udid" | xargs)"
+              [ -n "$udid" ] && printf '%s\tTimeWallet-Device-%s\n' "$udid" "$i"
+              i=$((i+1))
+            done
+          } > devices.txt
+          cat devices.txt
           jq -n --arg kid "$ASC_KEY_ID" --arg iss "$ASC_ISSUER_ID" --rawfile key asckey.p8 \
             '{key_id: $kid, issuer_id: $iss, key: $key, in_house: false}' > asc_api_key.json
           fastlane run register_devices devices_file:devices.txt api_key_path:asc_api_key.json

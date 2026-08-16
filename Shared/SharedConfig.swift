@@ -17,6 +17,12 @@ enum SharedConfig {
     /// Health conversion: earned minutes per 1000 steps.
     static let minutesPer1000Steps = 5.0
 
+    /// Name embossed on the wallet card; empty hides the card-holder line.
+    static var cardHolder: String {
+        get { store.string(forKey: "profile.cardHolder") ?? "" }
+        set { store.set(newValue, forKey: "profile.cardHolder") }
+    }
+
     /// Good-app usage credits in chunks of this many minutes…
     static let goodAppChunkMinutes = 5
     /// …up to this daily cap.
