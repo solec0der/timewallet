@@ -17,7 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install XcodeGen
-        run: brew install xcodegen
+        run: brew install xcodegen librsvg
+      - name: Render app icon
+        run: rsvg-convert -w 1024 -h 1024 icon/icon.svg -o App/Assets.xcassets/AppIcon.appiconset/AppIcon.png
       - name: Generate project
         run: xcodegen generate
       - name: Build (no signing)
@@ -40,7 +42,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install XcodeGen
-        run: brew install xcodegen
+        run: brew install xcodegen librsvg
+      - name: Render app icon
+        run: rsvg-convert -w 1024 -h 1024 icon/icon.svg -o App/Assets.xcassets/AppIcon.appiconset/AppIcon.png
       - name: Generate project
         run: xcodegen generate
       - name: Write App Store Connect API key

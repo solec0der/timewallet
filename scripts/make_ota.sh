@@ -8,6 +8,7 @@ IPA="$(ls build/export/*.ipa | head -1)"
 
 mkdir -p dist
 cp "$IPA" dist/TimeWallet.ipa
+cp App/Assets.xcassets/AppIcon.appiconset/AppIcon.png dist/AppIcon.png 2>/dev/null || true
 
 cat > dist/manifest.plist <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -27,7 +28,7 @@ cat > dist/manifest.plist <<EOF
       <key>metadata</key>
       <dict>
         <key>bundle-identifier</key><string>${BUNDLE_ID}</string>
-        <key>bundle-version</key><string>1.4</string>
+        <key>bundle-version</key><string>1.5</string>
         <key>kind</key><string>software</string>
         <key>title</key><string>TimeWallet</string>
       </dict>

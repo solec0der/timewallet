@@ -6,3 +6,4 @@ DerivedData/
 asc_api_key.json
 devices.txt
 .DS_Store
+App/Assets.xcassets/AppIcon.appiconset/AppIcon.png

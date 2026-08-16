@@ -1,0 +1,87 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#101830"/>
+      <stop offset="0.55" stop-color="#0B1122"/>
+      <stop offset="1" stop-color="#070B18"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.55">
+      <stop offset="0" stop-color="#2E4070" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#2E4070" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7D374"/>
+      <stop offset="0.5" stop-color="#EDB84F"/>
+      <stop offset="1" stop-color="#C8892A"/>
+    </linearGradient>
+    <linearGradient id="goldDeep" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9B54D"/>
+      <stop offset="1" stop-color="#A96F1E"/>
+    </linearGradient>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F4CB68"/>
+      <stop offset="1" stop-color="#B87F24"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#AFCBFF" stop-opacity="0.16"/>
+      <stop offset="0.5" stop-color="#AFCBFF" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#AFCBFF" stop-opacity="0.14"/>
+    </linearGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="46"/>
+    </filter>
+    <filter id="tiny" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#glow)"/>
+
+  <!-- Warm glow behind the hourglass -->
+  <ellipse cx="512" cy="690" rx="250" ry="170" fill="#E7A93C" opacity="0.28" filter="url(#soft)"/>
+
+  <!-- Glass body -->
+  <path d="M348 250
+           H676
+           C676 412 566 476 528 512
+           C566 548 676 612 676 774
+           H348
+           C348 612 458 548 496 512
+           C458 476 348 412 348 250 Z"
+        fill="url(#glass)" stroke="#8FB4F4" stroke-opacity="0.4" stroke-width="12" stroke-linejoin="round"/>
+
+  <!-- Sand: top pile draining -->
+  <path d="M420 402 Q512 368 604 402 C578 452 540 492 522 512 H502 C484 492 446 452 420 402 Z"
+        fill="url(#goldDeep)"/>
+
+  <!-- Falling coin stream -->
+  <circle cx="512" cy="560" r="13" fill="url(#gold)"/>
+  <circle cx="512" cy="606" r="15" fill="url(#gold)"/>
+  <circle cx="512" cy="656" r="17" fill="url(#gold)"/>
+
+  <!-- Bottom coin mound -->
+  <path d="M368 774 Q512 636 656 774 Z" fill="url(#goldDeep)"/>
+
+  <!-- Coins on the mound -->
+  <g>
+    <circle cx="462" cy="716" r="30" fill="url(#gold)"/>
+    <circle cx="462" cy="716" r="19" fill="none" stroke="#A96F1E" stroke-width="6" opacity="0.75"/>
+    <circle cx="563" cy="722" r="27" fill="url(#gold)"/>
+    <circle cx="563" cy="722" r="17" fill="none" stroke="#A96F1E" stroke-width="6" opacity="0.75"/>
+    <circle cx="512" cy="688" r="32" fill="url(#gold)"/>
+    <circle cx="512" cy="688" r="20" fill="none" stroke="#A96F1E" stroke-width="6" opacity="0.75"/>
+    <path d="M496 674 a22 22 0 0 1 30 -6" stroke="#FBE7A9" stroke-width="8" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Frame bars -->
+  <rect x="296" y="196" width="432" height="56" rx="28" fill="url(#frame)"/>
+  <rect x="296" y="772" width="432" height="56" rx="28" fill="url(#frame)"/>
+  <rect x="308" y="206" width="408" height="14" rx="7" fill="#FBE7A9" opacity="0.55"/>
+  <rect x="308" y="782" width="408" height="14" rx="7" fill="#FBE7A9" opacity="0.55"/>
+
+  <!-- Glass highlight -->
+  <path d="M382 280 C384 360 428 416 462 452" stroke="#D6E5FF" stroke-opacity="0.5" stroke-width="14"
+        fill="none" stroke-linecap="round" filter="url(#tiny)"/>
+</svg>
