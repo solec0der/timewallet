@@ -1,0 +1,110 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  compile:
+    name: Compile check (unsigned)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Build (no signing)
+        run: |
+          set -o pipefail
+          xcodebuild -project TimeWallet.xcodeproj \
+            -scheme TimeWallet \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            build | tail -80
+
+  ship:
+    name: Sign & publish OTA install page
+    needs: compile
+    if: github.ref == 'refs/heads/main' && vars.SIGNING_READY == 'true'
+    runs-on: macos-15
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Write App Store Connect API key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          printf '%s' "$ASC_KEY_P8" > asckey.p8
+          mkdir -p ~/.appstoreconnect/private_keys
+          cp asckey.p8 ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
+      - name: Register device
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          DEVICE_UDID: ${{ secrets.DEVICE_UDID }}
+        run: |
+          printf 'Device ID\tDevice Name\n%s\tYannick-iPhone\n' "$DEVICE_UDID" > devices.txt
+          cat > asc_api_key.json <<EOF
+          {
+            "key_id": "$ASC_KEY_ID",
+            "issuer_id": "$ASC_ISSUER_ID",
+            "key_filepath": "asckey.p8",
+            "in_house": false
+          }
+          EOF
+          fastlane run register_devices devices_file:devices.txt api_key_path:asc_api_key.json
+      - name: Archive
+        env:
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild -project TimeWallet.xcodeproj \
+            -scheme TimeWallet \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/TimeWallet.xcarchive \
+            -allowProvisioningUpdates \
+            -allowProvisioningDeviceRegistration \
+            -authenticationKeyPath "$PWD/asckey.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            archive | tail -80
+      - name: Export IPA
+        env:
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          sed "s/TEAMID_PLACEHOLDER/$TEAM_ID/" scripts/export.plist > build/export.plist
+          xcodebuild -exportArchive \
+            -archivePath build/TimeWallet.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist build/export.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$PWD/asckey.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+      - name: Build OTA page
+        run: bash scripts/make_ota.sh
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

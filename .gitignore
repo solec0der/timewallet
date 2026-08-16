@@ -1,0 +1,8 @@
+TimeWallet.xcodeproj/
+build/
+dist/
+DerivedData/
+*.p8
+asc_api_key.json
+devices.txt
+.DS_Store

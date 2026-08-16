@@ -1,0 +1,99 @@
+name: TimeWallet
+options:
+  deploymentTarget:
+    iOS: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Automatic
+targets:
+  TimeWallet:
+    type: application
+    platform: iOS
+    sources: [App, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.solecoder.timewallet
+    entitlements:
+      path: App/TimeWallet.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.developer.healthkit: true
+        com.apple.security.application-groups:
+          - group.com.solecoder.timewallet
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: TimeWallet
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSHealthShareUsageDescription: TimeWallet reads your steps and exercise minutes and converts them into scroll credit.
+    dependencies:
+      - target: TimeWalletMonitor
+      - target: TimeWalletShieldConfig
+      - target: TimeWalletShieldAction
+    scheme:
+      testTargets: []
+  TimeWalletMonitor:
+    type: app-extension
+    platform: iOS
+    sources: [MonitorExt, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.solecoder.timewallet.monitor
+    entitlements:
+      path: MonitorExt/Monitor.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.solecoder.timewallet
+    info:
+      path: MonitorExt/Info.plist
+      properties:
+        CFBundleDisplayName: TimeWalletMonitor
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.deviceactivity.monitor-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).MonitorExtension
+  TimeWalletShieldConfig:
+    type: app-extension
+    platform: iOS
+    sources: [ShieldConfigExt, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.solecoder.timewallet.shieldconfig
+    entitlements:
+      path: ShieldConfigExt/ShieldConfig.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.solecoder.timewallet
+    info:
+      path: ShieldConfigExt/Info.plist
+      properties:
+        CFBundleDisplayName: TimeWalletShieldConfig
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ManagedSettingsUI.shield-configuration-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShieldConfigExtension
+  TimeWalletShieldAction:
+    type: app-extension
+    platform: iOS
+    sources: [ShieldActionExt, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.solecoder.timewallet.shieldaction
+    entitlements:
+      path: ShieldActionExt/ShieldAction.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.solecoder.timewallet
+    info:
+      path: ShieldActionExt/Info.plist
+      properties:
+        CFBundleDisplayName: TimeWalletShieldAction
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ManagedSettings.shield-action-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShieldActionExtension
