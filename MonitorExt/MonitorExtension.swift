@@ -7,7 +7,9 @@ class MonitorExtension: DeviceActivityMonitor {
         if activity == .spendSession, event == .spendExpired {
             BlockController.shieldDoomApps()
         } else if activity == .goodApps, event.rawValue.hasPrefix("good_") {
-            Wallet.earn(Double(SharedConfig.goodAppChunkMinutes), reason: "Good-app time")
+            let chunk = SharedConfig.goodAppChunkMinutes
+            Wallet.earn(Double(chunk), reason: "Learn-app time")
+            Stats.addGoodToday(chunk, day: DayKey.today())
         }
     }
 

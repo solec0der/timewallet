@@ -79,6 +79,7 @@ enum BlockController {
         )
         do {
             try center.startMonitoring(.spendSession, during: schedule, events: [.spendExpired: event])
+            Stats.bump(Stats.sessionsKey)
         } catch {
             Wallet.refund(Double(scrollMinutes * SharedConfig.spendRatio),
                           reason: "Refund: session failed to start")

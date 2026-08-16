@@ -43,6 +43,7 @@ enum Wallet {
     private static func add(_ minutes: Double, reason: String) {
         let store = SharedConfig.store
         store.set(balanceMinutes + minutes, forKey: balanceKey)
+        if minutes > 0 { Stats.addEarned(minutes) }
         var entries = ledger()
         entries.insert(LedgerEntry(date: Date(), minutes: minutes, reason: reason), at: 0)
         if entries.count > 300 { entries = Array(entries.prefix(300)) }

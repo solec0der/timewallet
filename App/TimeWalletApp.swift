@@ -20,12 +20,13 @@ struct TimeWalletApp: App {
 struct ContentView: View {
     var body: some View {
         TabView {
-            WalletView()
-                .tabItem { Label("Wallet", systemImage: "creditcard") }
-            EarnView()
-                .tabItem { Label("Earn", systemImage: "plus.circle") }
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "gearshape") }
+            FocusView()
+                .tabItem { Label("Focus", systemImage: "timer") }
+            AppsView()
+                .tabItem { Label("Apps", systemImage: "nosign") }
+            AdjustView()
+                .tabItem { Label("Adjust", systemImage: "slider.horizontal.3") }
         }
+        .preferredColorScheme(.dark)
     }
 }

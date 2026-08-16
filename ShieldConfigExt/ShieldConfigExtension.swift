@@ -4,6 +4,7 @@ import UIKit
 
 class ShieldConfigExtension: ShieldConfigurationDataSource {
     private func makeConfig() -> ShieldConfiguration {
+        Stats.bump(Stats.shieldShownKey)
         let balance = Int(Wallet.balanceMinutes)
         let scroll = balance / SharedConfig.spendRatio
         return ShieldConfiguration(

@@ -5,9 +5,44 @@ import HealthKit
 final class HealthEarn: ObservableObject {
     static let shared = HealthEarn()
     private let store = HKHealthStore()
-    @Published var status = ""
+
+    @Published var todaySteps: Double = 0
+    @Published var creditedSteps: Double = 0
+    let stepsGoal: Double = 8000
 
     private var authorized = false
+
+    var pendingSteps: Double { max(0, todaySteps - creditedSteps) }
+
+    /// Refreshes today's numbers and silently credits new exercise minutes 1:1.
+    func refresh() async {
+        await requestAuth()
+        let day = DayKey.today()
+        todaySteps = await todaySum(.stepCount, unit: .count())
+        creditedSteps = SharedConfig.store.double(forKey: "health.stepsCredited.\(day)")
+
+        let exercise = await todaySum(.appleExerciseTime, unit: .minute())
+        let exerciseKey = "health.exerciseCredited.\(day)"
+        let exerciseCredited = SharedConfig.store.double(forKey: exerciseKey)
+        let delta = (exercise - exerciseCredited).rounded(.down)
+        if delta >= 1 {
+            SharedConfig.store.set(exerciseCredited + delta, forKey: exerciseKey)
+            Wallet.earn(delta, reason: "Exercise")
+        }
+    }
+
+    /// Converts uncredited steps into wallet minutes.
+    func collectSteps() {
+        let pending = pendingSteps.rounded(.down)
+        guard pending >= 1 else { return }
+        let day = DayKey.today()
+        SharedConfig.store.set(creditedSteps + pending, forKey: "health.stepsCredited.\(day)")
+        creditedSteps += pending
+        let minutes = ((pending / 1000.0 * SharedConfig.minutesPer1000Steps) * 10).rounded() / 10
+        if minutes > 0 {
+            Wallet.earn(minutes, reason: "\(Int(pending)) Steps")
+        }
+    }
 
     private func requestAuth() async {
         guard !authorized, HKHealthStore.isHealthDataAvailable() else { return }
@@ -19,38 +54,8 @@ final class HealthEarn: ObservableObject {
             try await store.requestAuthorization(toShare: [], read: types)
             authorized = true
         } catch {
-            status = "Health authorization failed: \(error.localizedDescription)"
+            print("Health authorization failed: \(error)")
         }
-    }
-
-    /// Credits today's steps and exercise minutes, remembering what was already
-    /// credited today so repeated syncs only add the delta.
-    func syncToday() async {
-        await requestAuth()
-        let day = ChoreStore.dayKey()
-        let steps = await todaySum(.stepCount, unit: .count())
-        let exercise = await todaySum(.appleExerciseTime, unit: .minute())
-
-        let stepMinutes = (steps / 1000.0) * SharedConfig.minutesPer1000Steps
-        let stepDelta = creditDelta(key: "health.steps.\(day)", newTotal: stepMinutes)
-        if stepDelta >= 1 {
-            Wallet.earn(stepDelta.rounded(.down), reason: "Steps (\(Int(steps)) today)")
-        }
-        let exerciseDelta = creditDelta(key: "health.exercise.\(day)", newTotal: exercise)
-        if exerciseDelta >= 1 {
-            Wallet.earn(exerciseDelta.rounded(.down), reason: "Exercise minutes")
-        }
-        status = "Today: \(Int(steps)) steps, \(Int(exercise)) exercise min. Credited +\(Int(stepDelta.rounded(.down)) + Int(exerciseDelta.rounded(.down))) min."
-    }
-
-    /// Returns how much of `newTotal` has not been credited yet and advances the marker.
-    private func creditDelta(key: String, newTotal: Double) -> Double {
-        let credited = SharedConfig.store.double(forKey: key)
-        let delta = max(0, newTotal - credited)
-        if delta >= 1 {
-            SharedConfig.store.set(credited + delta.rounded(.down), forKey: key)
-        }
-        return delta
     }
 
     private func todaySum(_ id: HKQuantityTypeIdentifier, unit: HKUnit) async -> Double {
