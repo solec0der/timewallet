@@ -6,6 +6,7 @@ class MonitorExtension: DeviceActivityMonitor {
         super.eventDidReachThreshold(event, activity: activity)
         if activity == .spendSession, event == .spendExpired {
             BlockController.shieldDoomApps()
+            SpendSession.end()
         } else if activity == .goodApps, event.rawValue.hasPrefix("good_") {
             let chunk = SharedConfig.goodAppChunkMinutes
             Wallet.earn(Double(chunk), reason: "Learn-app time")
@@ -17,6 +18,7 @@ class MonitorExtension: DeviceActivityMonitor {
         super.intervalDidEnd(for: activity)
         if activity == .spendSession {
             BlockController.shieldDoomApps()
+            SpendSession.end()
         }
     }
 }

@@ -13,12 +13,12 @@ class ShieldConfigExtension: ShieldConfigurationDataSource {
             icon: nil,
             title: ShieldConfiguration.Label(text: "⏳ Time Wallet", color: .white),
             subtitle: ShieldConfiguration.Label(
-                text: "Balance: \(balance) earned min ≈ \(scroll) scroll min.\nOpen TimeWallet to buy time.",
+                text: "Balance: \(balance) earned min ≈ \(scroll) scroll min.",
                 color: .white
             ),
             primaryButtonLabel: ShieldConfiguration.Label(text: "OK", color: .black),
             primaryButtonBackgroundColor: .white,
-            secondaryButtonLabel: nil
+            secondaryButtonLabel: ShieldConfiguration.Label(text: "Redeem time…", color: .white)
         )
     }
 

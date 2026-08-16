@@ -87,7 +87,15 @@ enum BlockController {
             return false
         }
         unshield()
+        SpendSession.begin(minutes: scrollMinutes)
         return true
+    }
+
+    /// Ends the current unlock immediately — re-shields, no refund (usage can't be measured).
+    static func endSessionNow() {
+        DeviceActivityCenter().stopMonitoring([.spendSession])
+        shieldDoomApps()
+        SpendSession.end()
     }
 
     /// Daily schedule that fires an event every 5 min of good-app usage, up to the cap.

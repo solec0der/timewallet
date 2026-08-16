@@ -79,7 +79,14 @@ struct FocusView: View {
                         .padding(.bottom, 16)
                     WalletCard(balanceMinutes: balance, holder: SharedConfig.cardHolder)
                         .padding(.bottom, 14)
-                    redeemButton
+                    if let session = activeSession {
+                        ActiveSessionCard(session: session, now: now) {
+                            BlockController.endSessionNow()
+                            reload()
+                        }
+                    } else {
+                        redeemButton
+                    }
                     if let start = focusStart {
                         runningSession(start: start)
                             .padding(.top, Theme.sectionGap)
@@ -107,12 +114,21 @@ struct FocusView: View {
                     spend(minutes)
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: NotificationRouter.openRedeem)) { _ in
+                reload()
+                showRedeem = true
+            }
             .alert("Time Wallet", isPresented: $showMessage) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(message ?? "")
             }
         }
+    }
+
+    private var activeSession: SpendSession.Record? {
+        guard let session = SpendSession.current, session.active else { return nil }
+        return session
     }
 
     // MARK: - Top pills
@@ -422,6 +438,73 @@ struct FocusView: View {
     private func elapsedString(since start: Date) -> String {
         let seconds = max(0, Int(now.timeIntervalSince(start)))
         return String(format: "%02d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, seconds % 60)
+    }
+}
+
+// MARK: - Active session card
+
+struct ActiveSessionCard: View {
+    let session: SpendSession.Record
+    let now: Date
+    let onLock: () -> Void
+
+    @State private var pulsing = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(.white)
+                    .frame(width: 9, height: 9)
+                    .opacity(pulsing ? 0.25 : 1)
+                    .animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: pulsing)
+                Text("DOOM SCROLL SESSION")
+                    .font(.caption.weight(.bold))
+                    .kerning(1.5)
+                    .foregroundStyle(.white.opacity(0.85))
+                Spacer()
+                Text(elapsed)
+                    .font(.subheadline.weight(.semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("\(session.minutes)")
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                Text("min unlocked")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+            .foregroundStyle(.white)
+            Text("Metered by actual use — the shield returns after \(session.minutes) min in your blocked apps, or at midnight.")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.75))
+            Button(action: onLock) {
+                Label("Lock again now", systemImage: "lock.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .background(RoundedRectangle(cornerRadius: Theme.tileRadius).fill(.white.opacity(0.2)))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.cardRadius)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(red: 0.85, green: 0.25, blue: 0.3),
+                                 Color(red: 0.5, green: 0.12, blue: 0.55)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .onAppear { pulsing = true }
+    }
+
+    private var elapsed: String {
+        let seconds = max(0, Int(now.timeIntervalSince(session.startedAt)))
+        return String(format: "%02d:%02d", seconds / 60, seconds % 60) + " ago"
     }
 }
 
