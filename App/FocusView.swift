@@ -425,11 +425,11 @@ struct FocusView: View {
 
     private func spend(_ minutes: Int) {
         if BlockController.startSpendSession(scrollMinutes: minutes) {
-            message = "Unlocked \(minutes) min of usage. The shield returns when they're used up (or at midnight)."
+            message = "Unlocked \(minutes) min of usage. The shield returns when they're used up."
         } else if Wallet.balanceMinutes < Double(minutes * SharedConfig.spendRatio) {
             message = "Not enough balance — you need \(minutes * SharedConfig.spendRatio) earned minutes."
         } else {
-            message = "Couldn't start the session (too close to midnight?). You were refunded."
+            message = "Couldn't start the session — you were refunded. Try again in a moment."
         }
         showMessage = true
         reload()
@@ -476,7 +476,7 @@ struct ActiveSessionCard: View {
                     .foregroundStyle(.white.opacity(0.8))
             }
             .foregroundStyle(.white)
-            Text("Metered by actual use — the shield returns after \(session.minutes) min in your blocked apps, or at midnight.")
+            Text("Metered by actual use — the shield returns after \(session.minutes) min in your blocked apps (\(Int(SharedConfig.sessionMaxHours)) h max).")
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.75))
             Button(action: onLock) {
@@ -551,7 +551,7 @@ struct RedeemSheet: View {
             .buttonStyle(.borderedProminent)
             .disabled(selected == nil)
 
-            Text("Unlocked minutes are metered by actual usage and stay valid until midnight.")
+            Text("Unlocked minutes are metered by actual usage and stay valid for \(Int(SharedConfig.sessionMaxHours)) hours.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

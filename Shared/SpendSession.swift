@@ -7,6 +7,7 @@ enum SpendSession {
         var minutes: Int
         var active: Bool
         var endedAt: Date?
+        var expiresAt: Date
     }
 
     private static let key = "session.current"
@@ -17,10 +18,10 @@ enum SpendSession {
                   var record = try? JSONDecoder().decode(Record.self, from: data) else {
                 return nil
             }
-            // Sessions never survive midnight; lazily close a stale one.
-            if record.active, !Calendar.current.isDateInToday(record.startedAt) {
+            // Fallback if the monitor extension never reported the end.
+            if record.active, Date() > record.expiresAt {
                 record.active = false
-                record.endedAt = record.endedAt ?? record.startedAt
+                record.endedAt = record.endedAt ?? record.expiresAt
                 save(record)
             }
             return record
@@ -31,7 +32,13 @@ enum SpendSession {
     }
 
     static func begin(minutes: Int) {
-        current = Record(startedAt: Date(), minutes: minutes, active: true, endedAt: nil)
+        current = Record(
+            startedAt: Date(),
+            minutes: minutes,
+            active: true,
+            endedAt: nil,
+            expiresAt: Date().addingTimeInterval(SharedConfig.sessionMaxHours * 3600)
+        )
     }
 
     static func end() {

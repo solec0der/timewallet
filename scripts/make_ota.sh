@@ -28,7 +28,7 @@ cat > dist/manifest.plist <<EOF
       <key>metadata</key>
       <dict>
         <key>bundle-identifier</key><string>${BUNDLE_ID}</string>
-        <key>bundle-version</key><string>1.5</string>
+        <key>bundle-version</key><string>1.6</string>
         <key>kind</key><string>software</string>
         <key>title</key><string>TimeWallet</string>
       </dict>

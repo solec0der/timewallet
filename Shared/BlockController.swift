@@ -54,9 +54,8 @@ enum BlockController {
     }
 
     /// Buys `scrollMinutes` of doom-app usage. The purchased minutes are metered by actual
-    /// usage (DeviceActivity threshold), valid until midnight; the shield returns when they
-    /// are used up. Returns false when broke or when the session could not be scheduled
-    /// (e.g. within 15 min of midnight — DeviceActivity's minimum interval).
+    /// usage (DeviceActivity threshold); the shield returns when they are used up, or after
+    /// the `sessionMaxHours` hard cap. Returns false when broke or scheduling fails.
     @discardableResult
     static func startSpendSession(scrollMinutes: Int) -> Bool {
         guard Wallet.spendForScroll(minutes: scrollMinutes) else { return false }
@@ -66,9 +65,12 @@ enum BlockController {
         center.stopMonitoring([.spendSession])
 
         let now = Date()
+        let end = now.addingTimeInterval(SharedConfig.sessionMaxHours * 3600)
+        // Full date components so the interval can cross midnight.
+        let comps: Set<Calendar.Component> = [.year, .month, .day, .hour, .minute, .second]
         let schedule = DeviceActivitySchedule(
-            intervalStart: Calendar.current.dateComponents([.hour, .minute, .second], from: now),
-            intervalEnd: DateComponents(hour: 23, minute: 59),
+            intervalStart: Calendar.current.dateComponents(comps, from: now),
+            intervalEnd: Calendar.current.dateComponents(comps, from: end),
             repeats: false
         )
         let event = DeviceActivityEvent(

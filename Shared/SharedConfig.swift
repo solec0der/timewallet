@@ -23,6 +23,10 @@ enum SharedConfig {
         set { store.set(newValue, forKey: "profile.cardHolder") }
     }
 
+    /// A spend session ends when its minutes are used up, or after this hard cap —
+    /// bounding how long apps can stay unshielded if you stop scrolling early.
+    static let sessionMaxHours: Double = 3
+
     /// Good-app usage credits in chunks of this many minutes…
     static let goodAppChunkMinutes = 5
     /// …up to this daily cap.
